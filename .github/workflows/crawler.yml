@@ -1,72 +1,72 @@
-name: Hot News Crawler
+name: Hot News Crawler  # 工作流名称
 
-on:
-  schedule:
-    # 我们使用的是 github 官方提供的资源来进行的推送，而每个账号的资源是限额的，为了不被官方判定为滥用而面临封号的风险，不建议比半小时更低
-    - cron: "0 */8 * * *" # 每8小时整点运行一次(实际有偏差) 或者 "*/30 * * * *" (每半小时执行一次) 或者 "*/30 0-14 * * *"(每天早上 8 点到晚上 10 点期间，每半小时运行一次)
-  workflow_dispatch:
+on:  # 触发条件定义
+  schedule:  # 定时任务配置
+    # 我们使用的是 GitHub 官方提供的资源来进行推送，每个账号的资源有额度限制，为了避免被认定滥用而封号，不建议频率低于半小时
+    - cron: "0 0 * * *" # GitHub Actions 采用 UTC，0 点对应北京时间(UTC+8)早上 8 点
+  workflow_dispatch:  # 支持手动触发
 
 # 添加权限设置
-permissions:
-  contents: write
+permissions:  # 配置作业所需权限
+  contents: write  # 允许写入仓库内容
 
-jobs:
-  crawl:
-    runs-on: ubuntu-latest
+jobs:  # 定义所有作业
+  crawl:  # 单个抓取作业
+    runs-on: ubuntu-latest  # 使用 GitHub 提供的最新版 Ubuntu runner
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    steps:  # 作业步骤列表
+      - name: Checkout repository  # 检出仓库代码
+        uses: actions/checkout@v3  # 使用官方 checkout 动作
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+      - name: Set up Python  # 设置 Python 运行环境
+        uses: actions/setup-python@v4  # 安装 Python 的 GitHub Action
+        with:  # 传递参数
+          python-version: "3.10"  # 指定使用 Python 3.10
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Install dependencies  # 安装依赖
+        run: |  # 运行多行 shell 指令
+          python -m pip install --upgrade pip  # 升级 pip 至最新版本
+          pip install -r requirements.txt  # 根据 requirements.txt 安装依赖
 
-      - name: Verify required files
-        run: |
-          echo "🔍 检查必需的配置文件..."
+      - name: Verify required files  # 确认所需配置存在
+        run: |  # 执行检查脚本
+          echo "🔍 检查必需的配置文件..." # 提示正在检查
 
-          if [ ! -f config/config.yaml ]; then
-            echo "❌ 错误: config/config.yaml 文件不存在"
-            echo "请参考项目文档创建配置文件"
-            exit 1
-          fi
+          if [ ! -f config/config.yaml ]; then # 判断配置文件是否存在
+            echo "❌错误: config/config.yaml 文件不存在" # 提示缺失
+            echo "请参考项目文档创建配置文件" # 引导用户创建
+            exit 1 # 终止运行
+          fi # 结束第一个判断
 
-          if [ ! -f config/frequency_words.txt ]; then
-            echo "❌ 错误: config/frequency_words.txt 文件不存在"
-            echo "请参考项目文档创建频率词配置文件"
-            exit 1
-          fi
+          if [ ! -f config/frequency_words.txt ]; then # 判断频率词文件是否存在
+            echo "❌错误: config/frequency_words.txt 文件不存在" # 提示缺失
+            echo "请参考项目文档创建频率词配置文件" # 引导创建
+            exit 1 # 终止运行
+          fi # 结束第二个判断
 
-          echo "✅ 配置文件检查通过"
+          echo "✅配置文件检查通过" # 检查成功提示
 
-      - name: Run crawler
-        env:
-          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DINGTALK_WEBHOOK_URL: ${{ secrets.DINGTALK_WEBHOOK_URL }}
-          WEWORK_WEBHOOK_URL: ${{ secrets.WEWORK_WEBHOOK_URL }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
-          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          NTFY_SERVER_URL: ${{ secrets.NTFY_SERVER_URL }}
-          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
-          GITHUB_ACTIONS: true
-        run: python main.py
+      - name: Run crawler  # 执行爬虫主程序
+        env:  # 传入运行所需的环境变量
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}  # 飞书机器人地址
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}  # Telegram 机器人令牌
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}  # 目标 Telegram 聊天 ID
+          DINGTALK_WEBHOOK_URL: ${{ secrets.DINGTALK_WEBHOOK_URL }}  # 钉钉机器人地址
+          WEWORK_WEBHOOK_URL: ${{ secrets.WEWORK_WEBHOOK_URL }}  # 企业微信机器人地址
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}  # 邮件发送者
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}  # 邮件密码或授权码
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}  # 邮件接收者
+          EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}  # SMTP 服务器
+          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}  # SMTP 端口
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}  # ntfy 推送主题
+          NTFY_SERVER_URL: ${{ secrets.NTFY_SERVER_URL }}  # ntfy 服务器地址
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}  # ntfy 鉴权 Token
+          GITHUB_ACTIONS: true  # 标记程序运行在 GitHub Actions
+        run: python main.py  # 执行主脚本
 
-      - name: Commit and push if changes
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-          git add -A
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update by GitHub Actions at $(TZ=Asia/Shanghai date)" && git push)
+      - name: Commit and push if changes  # 如有更改则提交
+        run: |  # 执行 Git 提交脚本
+          git config --global user.name 'GitHub Actions' # 配置提交用户
+          git config --global user.email 'actions@github.com' # 配置提交邮箱
+          git add -A # 暂存所有改动
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update by GitHub Actions at $(TZ=Asia/Shanghai date)" && git push) # 有变更则提交并推送
